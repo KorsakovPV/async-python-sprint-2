@@ -4,5 +4,7 @@ __pycache__/
 *.pyc
 
 *.log
+*.log.*
 
 mymymy.py
+data.json

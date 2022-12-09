@@ -1,110 +1,40 @@
+import concurrent
+import json
+import random
+from concurrent.futures import ThreadPoolExecutor
+
 from job import Job
 from scheduler import Scheduler
 from setting_log import logger
 import datetime
+import time
+
+from tasks import task_for_test_0, worker_tasks, add_task
 
 
-def now_hour(hour=0):
-    return datetime.datetime.now().hour
+def main():
+    scheduler = Scheduler()
+
+    scheduler_stop(scheduler)
+
+    scheduler = Scheduler()
+    scheduler_restart(scheduler)
+
+    # scheduler.run()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        pool.submit(scheduler.run)
+        pool.submit(add_task(scheduler))
 
 
-def now_minute(minute=0):
-    return (datetime.datetime.now().minute + minute) % 60
+def scheduler_restart(scheduler):
+    scheduler.restart()
 
 
-def now_second(second=0):
-    return (datetime.datetime.now().second + second) % 60
+def scheduler_stop(scheduler):
+    add_task(scheduler)
+    scheduler.stop()
 
+concurrent.futures.Future
 
-def task_for_test_0(string):
-    logger.info('Start task_for_test_0')
-    print(string)
-
-
-job0 = Job(
-    fn=task_for_test_0, kwargs={'string': 'strung'},
-    start_at=datetime.time(hour=now_hour(), minute=now_minute(), second=now_second())
-)
-
-
-def task_for_test_1(string):
-    logger.info('Start task_for_test_1')
-    print(string)
-
-
-job1 = Job(
-    fn=task_for_test_1, kwargs={'string': 'strung'},
-    start_at=datetime.time(hour=now_hour(), minute=now_minute(3), second=now_second())
-)
-
-
-def task_for_test_2(string):
-    logger.info('Start task_for_test_2')
-    print(string)
-
-
-job2 = Job(
-    fn=task_for_test_1, kwargs={'string': 'strung'},
-    start_at=datetime.time(hour=now_hour(), minute=now_minute(), second=now_second(3))
-)
-
-
-def task_for_test_3(string):
-    logger.info('Start task_for_test_3')
-    print(string)
-
-
-job3 = Job(
-    fn=task_for_test_1, kwargs={'string': 'strung'},
-    start_at=datetime.time(hour=now_hour(), minute=now_minute(1), second=now_second(3))
-)
-
-
-def task_for_test_4(string):
-    logger.info('Start task_for_test_4')
-    print(string)
-
-
-job4 = Job(
-    fn=task_for_test_1, kwargs={'string': 'strung'},
-    start_at=datetime.time(hour=now_hour(), minute=now_minute() + 2, second=now_second())
-)
-
-
-def task_for_test_5(string):
-    logger.info('Start task_for_test_5')
-    print(string)
-
-
-job5 = Job(
-    fn=task_for_test_1, kwargs={'string': 'strung'},
-    start_at=datetime.time(hour=now_hour(), minute=now_minute() + 1, second=now_second())
-)
-
-
-def task_for_test_6(string):
-    logger.info('Start task_for_test_6')
-    print(string)
-
-
-job6 = Job(
-    fn=task_for_test_1, kwargs={'string': 'strung'},
-    start_at=datetime.time(hour=now_hour(), minute=now_minute(), second=now_second())
-)
-
-scheduler = Scheduler()
-
-scheduler.schedule(task=job0)
-scheduler.schedule(task=job1)
-scheduler.schedule(task=job2)
-scheduler.schedule(task=job3)
-scheduler.schedule(task=job4)
-scheduler.schedule(task=job5)
-scheduler.schedule(task=job6)
-# scheduler.schedule(task=job)
-# scheduler.schedule(task=job)
-# scheduler.schedule(task=job)
-# scheduler.schedule(task=job)
-# scheduler.schedule(task=job)
-
-scheduler.run()
+if __name__ == "__main__":
+    main()
