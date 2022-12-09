@@ -39,3 +39,8 @@ def get_logger(logger_name: str, log_level: str = 'INFO') -> logging.Logger:
     dictConfig(logger_config)
 
     return logging.getLogger(logger_name)
+
+
+LOG_LEVEL = 'DEBUG'
+
+logger = get_logger('root', LOG_LEVEL)
