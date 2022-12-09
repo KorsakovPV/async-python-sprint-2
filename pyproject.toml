@@ -14,3 +14,15 @@ flake8 = "^6.0.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+line_length = 99
+multi_line_output = 0
+skip = ['.git',
+      '.mypy_cache',
+      '.venv',
+      'venv', ]
+
+[tool.mypy]
+python_version = 3.9
+exclude = "tests/|venv/"
