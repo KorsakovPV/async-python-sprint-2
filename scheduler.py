@@ -4,7 +4,7 @@ import json
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Generator
+from typing import Generator, Optional
 
 from job import Job, JobStatus
 from schemas import TaskSchema
@@ -141,7 +141,7 @@ class Scheduler:
                 pool.submit(result_iterator.send, task)
 
     @property
-    def count_in_queue_task(self):
+    def count_in_queue_task(self) -> list[Job]:
         """
         Метод возвращает колличество Job в очереди.
 
@@ -194,7 +194,7 @@ class Scheduler:
             dependencies=dependencies
         )
 
-    def get_task_in_scheduler_tasks(self, id_job):
+    def get_task_in_scheduler_tasks(self, id_job) -> Optional[Job]:
         """
         Пытается найти в добавленных Job с таким же id. Если находит то, возвращает найденный,
         если не находит то, создает новый и
@@ -209,7 +209,7 @@ class Scheduler:
             job = None
         return job
 
-    def restart(self):
+    def restart(self) -> None:
         """
         Метод восстанавливает работу планировщика после штатного завершения
 
@@ -258,7 +258,12 @@ class Scheduler:
             self.schedule(task=task_job)
         logger.info('Scheduler restart')
 
-    def stop(self):
+    def stop(self) -> None:
+        """
+        Метод останавливает работу планировщика.
+
+        :return:
+        """
         tasks_json = []
         for task in self.tasks:
             task_dict = task.__dict__
