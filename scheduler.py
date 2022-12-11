@@ -22,8 +22,6 @@ class Scheduler:
         """
         self._pool_size: int = pool_size
         self.tasks: list[Job] = []
-        # self.tasks_completed: list[Job] = []
-        # self.tasks_fail: list[Job] = []
         self.stop_when_queue_is_empty = stop_when_queue_is_empty
 
     def schedule(self, task: Job) -> None:

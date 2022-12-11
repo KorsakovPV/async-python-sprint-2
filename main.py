@@ -1,4 +1,3 @@
-import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from scheduler import Scheduler
@@ -28,25 +27,11 @@ def main():
         pool.submit(add_task(scheduler))
 
 
-    for task in scheduler.tasks:
-        task.response_future.join()
-    # while threading.active_count() > 0:
-    #     pass
-
-    for task in scheduler.tasks:
-        print(task.rezult)
-
-
-
-    assert len(scheduler.tasks_completed) == 45
-    assert len(scheduler.tasks_fail) == 0
-
-
-def scheduler_restart(scheduler):
+def scheduler_restart(scheduler) -> None:
     scheduler.restart()
 
 
-def scheduler_stop(scheduler):
+def scheduler_stop(scheduler) -> None:
     add_task(scheduler)
     scheduler.stop()
 
