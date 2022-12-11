@@ -10,6 +10,8 @@ packages = [{include = "async_python_sprint_2"}]
 python = "^3.10"
 flake8 = "^6.0.0"
 pydantic = "^1.10.2"
+isort = "^5.10.1"
+mypy = "^0.991"
 
 
 [build-system]
@@ -25,5 +27,5 @@ skip = ['.git',
       'venv', ]
 
 [tool.mypy]
-python_version = 3.9
+python_version = 3.10
 exclude = "tests/|venv/"
