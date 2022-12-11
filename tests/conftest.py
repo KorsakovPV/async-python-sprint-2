@@ -1,11 +1,12 @@
-import uuid
 import datetime
+import uuid
 
 import pytest as pytest
 
 from job import Job
 from scheduler import Scheduler
 from tasks import worker_tasks
+
 
 def fn():
     pass
