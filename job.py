@@ -5,10 +5,10 @@ from setting_log import logger
 
 
 class JobStatus(Enum):
-    in_queue = 0
-    in_progress = 1
-    completed = 2
-    error = 3
+    IN_QUEUE = 0
+    IN_PROGRESS = 1
+    COMPLETED = 2
+    ERROR = 3
 
 
 class Job:
@@ -29,7 +29,7 @@ class Job:
             dependencies=[],
             status=JobStatus(0)
     ):
-        self._fn = fn  # вызываемый объект
+        self._fn = fn
         self.fn_name = fn.__name__
         self.args = args if args is not None else []
         self.kwargs = kwargs if kwargs is not None else {}
@@ -38,7 +38,6 @@ class Job:
         self.tries = tries
         self.dependencies = dependencies
         self.time_step = datetime.timedelta(minutes=10)
-        self.response_future = None
         self.id = id
         self.rezult = None
         self.status = status
@@ -78,7 +77,7 @@ class Job:
         :return:
         """
         for dependencies_task in self.dependencies:
-            if dependencies_task.response_future and dependencies_task.response_future.done():
+            if dependencies_task.status == JobStatus.COMPLETED:
                 continue
             else:
                 return False
@@ -106,17 +105,3 @@ class Job:
         if other.status.value != self.status.value:
             return other.status.value > self.status.value
         return other.start_datetime > self.start_datetime
-
-    # def get_start_datetime(self, start_at: datetime.datetime):
-    #     """
-    #     Если время  прошло то
-    #
-    #     :param start_at:
-    #     :return:
-    #     """
-    #     now = datetime.datetime.now()
-    #     if start_at:
-    #         if now > start_at:
-    #             return start_at + datetime.timedelta(days=1)
-    #         return start_at
-    #     return now

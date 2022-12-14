@@ -1,4 +1,5 @@
 import datetime
+import random
 import uuid
 
 import pytest as pytest
@@ -52,4 +53,64 @@ def job(job_inner):
 @pytest.fixture()
 def scheduler(job_inner):
     return Scheduler()
+
+def get_start_time():
+    """
+    Метод генерирует время, которое используется как время запуска функции.
+    Используется для интеграционных тестов
+
+    :return:
+    """
+    return datetime.datetime.now() + datetime.timedelta(
+        seconds=(random.randrange(30) + 2)
+    )
+
+def create_tasks(scheduler):
+    """
+    Метод генерирует задачи для интеграционных тестов
+
+    :param scheduler:
+    :return:
+    """
+    for i in range(40):
+        job0 = Job(
+            fn=worker_tasks[f'task_for_test_{i % 10}'],
+            args=[],
+            kwargs={},
+            start_datetime=get_start_time(),
+            max_working_time=20,
+            tries=0,
+            dependencies=[],
+            id=uuid.uuid4(),
+        )
+        scheduler.schedule(task=job0)
+
+    for i in range(5):
+        job_inner0 = Job(
+            fn=worker_tasks['task_for_test_inner_0'], kwargs={},
+            id=uuid.uuid4(),
+        )
+        job_inner1 = Job(
+            fn=worker_tasks['task_for_test_inner_1'], kwargs={},
+            id=uuid.uuid4(),
+        )
+        job_inner2 = Job(
+            fn=worker_tasks['task_for_test_inner_2'], kwargs={},
+            id=uuid.uuid4(),
+        )
+        job_inner3 = Job(
+            fn=worker_tasks['task_for_test_inner_3'], kwargs={},
+            id=uuid.uuid4(),
+        )
+        job = Job(
+            fn=worker_tasks[f'task_for_test_{i % 4}'],
+            args=[],
+            kwargs={},
+            start_datetime=get_start_time(),
+            max_working_time=20,
+            tries=0,
+            dependencies=[job_inner0, job_inner1, job_inner2, job_inner3],
+            id=uuid.uuid4(),
+        )
+        scheduler.schedule(task=job)
 
