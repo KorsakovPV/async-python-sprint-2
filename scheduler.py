@@ -1,28 +1,36 @@
 import datetime
-import heapq
 import json
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
-from typing import Generator, Optional
+from typing import Optional
 
 from job import Job, JobStatus
 from schemas import TaskSchema
 from setting_log import logger
 from tasks import worker_tasks
+from functools import wraps
+
+
+def coroutine(func):
+    @wraps(func)
+    def inner(*args, **kwargs):
+        fn = func(*args, **kwargs)
+        fn.send(None)
+        return fn
+
+    return inner
 
 
 class Scheduler:
-    def __init__(self, pool_size: int = 10, stop_when_queue_is_empty=False) -> None:
+    def __init__(self, pool_size: int = 10) -> None:
         """
         Класс планировщик. Принимает Job и запускает их в соответствии с расписанием.
 
-        :param pool_size: размер пула для ThreadPoolExecutor
+        :param pool_size: размер пула
         :param stop_when_queue_is_empty: поведение планировщика при пустой очереди
         """
         self._pool_size: int = pool_size
         self.tasks: list[Job] = []
-        self.stop_when_queue_is_empty = stop_when_queue_is_empty
+        self.scheduler_run = False
 
     def schedule(self, task: Job) -> None:
         """
@@ -42,10 +50,21 @@ class Scheduler:
                 if dependencies_task not in self.tasks:
                     self.schedule(dependencies_task)
 
-        heapq.heappush(self.tasks, task)
+        self.tasks.append(task)
         logger.info('Task is added in Scheduler.')
 
-    def get_task(self) -> Generator[Job, None, None]:
+    # @property
+    # def _stop_when_queue_is_empty(self) -> bool:
+    #     """
+    #     Метод регулирует поведение планировщика при пустой очереди.
+    #
+    #     :return:
+    #     """
+    #     if self.stop_when_queue_is_empty:
+    #         return bool(self.tasks)
+    #     return True
+
+    def get_task(self, target) -> None:
         """
         Метод генератор смотрит когда, стартует следующий Job. Ждет этого момента.
         Если у Job есть не выполненные зависимости откладывает ее. Если зависимостей нет или они
@@ -54,9 +73,9 @@ class Scheduler:
         :return: Job
         """
 
-        while self._stop_when_queue_is_empty:
+        while self.scheduler_run:
             self.tasks.sort()
-            if self.tasks[0].status == JobStatus(0):
+            if self.tasks[0].status == JobStatus.IN_QUEUE:
                 time_next_task = self.tasks[0].start_datetime
                 now_datetime = datetime.datetime.now()
 
@@ -69,83 +88,59 @@ class Scheduler:
                     time.sleep(time_to_next_task)
 
                 if self.tasks[0].check_dependencies_task_is_complite() is False:
-                    # task = heapq.heappop(self.tasks)
                     self.tasks[0].set_next_start_datetime()
-                    # self.schedule(task)
 
-                logger.info('Geting task')
-                # yield heapq.heappop(self.tasks)
-                yield self.tasks[0]
+                if len(self.count_in_queue_task(JobStatus.IN_PROGRESS)) < self._pool_size:
+                    logger.info('Geting task')
+                    self.tasks[0].status = JobStatus.IN_PROGRESS
+                    target.send(self.tasks[0])
+                else:
+                    logger.info('Pool size more than 10')
 
-            else:
+    @coroutine
+    def execute_job(self):
+
+        while task := (yield):
+            try:
                 logger.info(
-                    'There are no scheduled tasks in the scheduler. Waiting for 5 minutes.'
+                    f'Number of tasks {len(self.count_in_queue_task(JobStatus.IN_QUEUE))} '
+                    f'from {len(self.tasks)}, '
+                    f'Active tasks {len(self.count_in_queue_task(JobStatus.IN_PROGRESS))}.'
                 )
-                time.sleep(5 * 60)
-
-    def result_iterator(self) -> Generator[None, Job, None]:
-        """
-        Метод корутина. Получает Job с футурой и обрабатывает ее.
-
-        :return:
-        """
-        while True:
-            task = (yield)
-            logger.info('Add result task in work_response.')
-            task.rezult = task.response_future.result(timeout=task.max_working_time)
-
-            if task.response_future.done():
-                task.status = JobStatus(2)
-
-            elif task.response_future.done() is False and task.tries:
-                task.set_next_start_datetime()
-                task.tries -= 1
-                task.status = JobStatus(0)
-                self.schedule(task)
-
-            else:
-                task.status = JobStatus(3)
-
-    @property
-    def _stop_when_queue_is_empty(self) -> bool:
-        """
-        Метод регулирует поведение планировщика при пустой очереди.
-
-        :return:
-        """
-        if self.stop_when_queue_is_empty:
-            return bool(self.tasks)
-        return True
+                task.rezult = task.run()
+                task.status = JobStatus.COMPLETED
+            except Exception as err:
+                logger.error(f'Job id={task.id} is fail with {err}')
+                if task.tries > 0:
+                    task.set_next_start_datetime()
+                    task.tries -= 1
+                    task.status = JobStatus.IN_QUEUE
+                else:
+                    task.status = JobStatus.ERROR
 
     def run(self) -> None:
         """
-        Метод запускает выполнение добавленных Job
+        Метод генератор смотрит когда, стартует следующий Job. Ждет этого момента.
+        Если у Job есть не выполненные зависимости откладывает ее. Если зависимостей нет или они
+        завершены передает Job на выполнение.
 
-        :return:
+        :return: Job
         """
         logger.info('Scheduler run.')
 
-        result_iterator = self.result_iterator()
-        next(result_iterator)
+        self.scheduler_run = True
 
-        with ThreadPoolExecutor(max_workers=self._pool_size) as pool:
-            while task := next(self.get_task()):
-                task.status = JobStatus(1)
-                task.response_future = pool.submit(task.run)
-                logger.info(
-                    f'Number of tasks {len(self.count_in_queue_task)} from {len(self.tasks)}, '
-                    f'number of active_count {threading.active_count()}'
-                )
-                pool.submit(result_iterator.send, task)
+        execute = self.execute_job()
 
-    @property
-    def count_in_queue_task(self) -> list[Job]:
+        self.get_task(execute)
+
+    def count_in_queue_task(self, status) -> list[Job]:
         """
         Метод возвращает колличество Job в очереди.
 
         :return:
         """
-        return [x for x in self.tasks if x.status == JobStatus(0)]
+        return [x for x in self.tasks if x.status == status]
 
     def get_or_create_job(
             self,
@@ -188,7 +183,7 @@ class Scheduler:
             start_datetime=start_datetime,
             max_working_time=max_working_time,
             tries=tries,
-            status=JobStatus(0) if status == JobStatus(1) else status,
+            status=JobStatus.IN_QUEUE if status == JobStatus.IN_PROGRESS else status,
             dependencies=dependencies
         )
 
@@ -255,6 +250,7 @@ class Scheduler:
             )
             self.schedule(task=task_job)
         logger.info('Scheduler restart')
+        self.run()
 
     def stop(self) -> None:
         """
@@ -262,6 +258,7 @@ class Scheduler:
 
         :return:
         """
+        self.scheduler_run = False
         tasks_json = []
         for task in self.tasks:
             task_dict = task.__dict__

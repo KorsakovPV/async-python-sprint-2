@@ -1,7 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor
 
 from scheduler import Scheduler
-from tasks import add_task
+from tests.conftest import create_tasks
 
 
 def main():
@@ -9,8 +8,7 @@ def main():
     Метод для интеграционного тестирования. И демонстрации работы планировщика.
 
     Создает экземпляр класса Scheduler наполняет его задачами. Штатно останавливает планировщик.
-    Создает новый экземпляр класса Scheduler, рестартует его. В запушенные планировщик добавляет
-    новые таски.
+    Создает новый экземпляр класса Scheduler, рестартует его.
 
 
     :return:
@@ -18,21 +16,29 @@ def main():
     scheduler = Scheduler()
     scheduler_stop(scheduler)
 
-    scheduler = Scheduler(stop_when_queue_is_empty=True)
+    scheduler = Scheduler()
     scheduler_restart(scheduler)
-    # scheduler.run()
-
-    with ThreadPoolExecutor() as pool:
-        pool.submit(scheduler.run)
-        pool.submit(add_task(scheduler))
 
 
 def scheduler_restart(scheduler) -> None:
+    """
+    Метод эмулирует ситуацию восстановления после штатной остановки
+
+    :param scheduler:
+    :return:
+    """
     scheduler.restart()
 
 
 def scheduler_stop(scheduler) -> None:
-    add_task(scheduler)
+    """
+    Метод эмулирует ситуацию штатной остановки
+
+    :param scheduler:
+    :return:
+    """
+
+    create_tasks(scheduler)
     scheduler.stop()
 
 

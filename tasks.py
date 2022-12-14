@@ -1,10 +1,8 @@
-import datetime
 import json
-import random
-import uuid
+import os
+
 from urllib.request import urlopen
 
-from job import Job
 from setting_log import logger
 from utils import CITIES, ERR_MESSAGE_TEMPLATE
 
@@ -58,10 +56,7 @@ def task_for_test_0():
 
     CITY_NAME_FOR_TEST = "MOSCOW"
 
-    ywAPI = YandexWeatherAPI()
-    resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
-
-    return resp.get("info")
+    return get_weather(CITY_NAME_FOR_TEST)
 
 
 def task_for_test_1():
@@ -73,10 +68,7 @@ def task_for_test_1():
 
     CITY_NAME_FOR_TEST = "PARIS"
 
-    ywAPI = YandexWeatherAPI()
-    resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
-
-    return resp.get("info")
+    return get_weather(CITY_NAME_FOR_TEST)
 
 
 def task_for_test_2():
@@ -89,10 +81,7 @@ def task_for_test_2():
 
     CITY_NAME_FOR_TEST = "LONDON"
 
-    ywAPI = YandexWeatherAPI()
-    resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
-
-    return resp.get("info")
+    return get_weather(CITY_NAME_FOR_TEST)
 
 
 def task_for_test_3():
@@ -105,10 +94,85 @@ def task_for_test_3():
 
     CITY_NAME_FOR_TEST = "BERLIN"
 
-    ywAPI = YandexWeatherAPI()
-    resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
+    return get_weather(CITY_NAME_FOR_TEST)
 
-    return resp.get("info")
+
+def task_for_test_4():
+    """
+    Тестовый метод. Используется для интеграционных тестов
+
+    :return:
+    """
+    logger.info(f'Started task_for_test_{4}')
+
+    CITY_NAME_FOR_TEST = "BEIJING"
+
+    yield from read_and_del_file(CITY_NAME_FOR_TEST)
+
+
+def task_for_test_5():
+    """
+    Тестовый метод. Используется для интеграционных тестов
+
+    :return:
+    """
+    logger.info(f'Started task_for_test_{5}')
+
+    CITY_NAME_FOR_TEST = "BERLIN"
+
+    yield from read_and_del_file(CITY_NAME_FOR_TEST)
+
+
+def task_for_test_6():
+    """
+    Тестовый метод. Используется для интеграционных тестов
+
+    :return:
+    """
+    logger.info(f'Started task_for_test_{6}')
+
+    CITY_NAME_FOR_TEST = "KAZAN"
+
+    yield from read_and_del_file(CITY_NAME_FOR_TEST)
+
+
+def task_for_test_7():
+    """
+    Тестовый метод. Используется для интеграционных тестов
+
+    :return:
+    """
+    logger.info(f'Started task_for_test_{7}')
+
+    CITY_NAME_FOR_TEST = "LONDON"
+
+    yield from read_and_del_file(CITY_NAME_FOR_TEST)
+
+
+def task_for_test_8():
+    """
+    Тестовый метод. Используется для интеграционных тестов
+
+    :return:
+    """
+    logger.info(f'Started task_for_test_{8}')
+
+    CITY_NAME_FOR_TEST = "MOSCOW"
+
+    yield from read_and_del_file(CITY_NAME_FOR_TEST)
+
+
+def task_for_test_9():
+    """
+    Тестовый метод. Используется для интеграционных тестов
+
+    :return:
+    """
+    logger.info(f'Started task_for_test_{9}')
+
+    CITY_NAME_FOR_TEST = "PARIS"
+
+    yield from read_and_del_file(CITY_NAME_FOR_TEST)
 
 
 def task_for_test_inner_0():
@@ -121,10 +185,7 @@ def task_for_test_inner_0():
 
     CITY_NAME_FOR_TEST = "BEIJING"
 
-    ywAPI = YandexWeatherAPI()
-    resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
-
-    return resp.get("info")
+    return get_weather(CITY_NAME_FOR_TEST)
 
 
 def task_for_test_inner_1():
@@ -137,10 +198,7 @@ def task_for_test_inner_1():
 
     CITY_NAME_FOR_TEST = "KAZAN"
 
-    ywAPI = YandexWeatherAPI()
-    resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
-
-    return resp.get("info")
+    return get_weather(CITY_NAME_FOR_TEST)
 
 
 def task_for_test_inner_2():
@@ -153,10 +211,7 @@ def task_for_test_inner_2():
 
     CITY_NAME_FOR_TEST = "SPETERSBURG"
 
-    ywAPI = YandexWeatherAPI()
-    resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
-
-    return resp.get("info")
+    return get_weather(CITY_NAME_FOR_TEST)
 
 
 def task_for_test_inner_3():
@@ -169,10 +224,39 @@ def task_for_test_inner_3():
 
     CITY_NAME_FOR_TEST = "VOLGOGRAD"
 
+    return get_weather(CITY_NAME_FOR_TEST)
+
+
+def get_weather(CITY_NAME_FOR_TEST):
+    """
+    Метод создает или удаляет папку если она создана, читает данные из сети и сохраняет в файл.
+
+    :param CITY_NAME_FOR_TEST:
+    :return:
+    """
+    if not os.path.exists(CITY_NAME_FOR_TEST):
+        os.makedirs(CITY_NAME_FOR_TEST)
+    else:
+        os.rmdir(CITY_NAME_FOR_TEST)
+
     ywAPI = YandexWeatherAPI()
     resp = ywAPI.get_forecasting(CITY_NAME_FOR_TEST)
-
+    with open(f"{CITY_NAME_FOR_TEST}.txt", "w") as file:
+        file.write(str(resp.get("info")))
     return resp.get("info")
+
+
+def read_and_del_file(CITY_NAME_FOR_TEST):
+    """
+    Читает данные из файла и возвращает их как результат работы метода.
+    после чего файл удаляется.
+
+    :param CITY_NAME_FOR_TEST:
+    :return:
+    """
+    with open(f"{CITY_NAME_FOR_TEST}.txt", "r") as file:
+        yield file.readlines()
+    os.remove(file.name)
 
 
 worker_tasks = {
@@ -180,70 +264,14 @@ worker_tasks = {
     'task_for_test_1': task_for_test_1,
     'task_for_test_2': task_for_test_2,
     'task_for_test_3': task_for_test_3,
+    'task_for_test_4': task_for_test_4,
+    'task_for_test_5': task_for_test_5,
+    'task_for_test_6': task_for_test_6,
+    'task_for_test_7': task_for_test_7,
+    'task_for_test_8': task_for_test_8,
+    'task_for_test_9': task_for_test_9,
     'task_for_test_inner_0': task_for_test_inner_0,
     'task_for_test_inner_1': task_for_test_inner_1,
     'task_for_test_inner_2': task_for_test_inner_2,
     'task_for_test_inner_3': task_for_test_inner_3,
 }
-
-
-def get_start_time():
-    """
-    Метод генерирует время, которое используется как время запуска функции.
-    Используется для интеграционных тестов
-
-    :return:
-    """
-    return datetime.datetime.now() + datetime.timedelta(
-        seconds=(random.randrange(200) + 2)
-    )
-
-
-def add_task(scheduler):
-    """
-    Метод генерирует задачи для интеграционных тестов
-
-    :param scheduler:
-    :return:
-    """
-    for i in range(20):
-        job0 = Job(
-            fn=worker_tasks[f'task_for_test_{i % 4}'],
-            args=[],
-            kwargs={},
-            start_datetime=get_start_time(),
-            max_working_time=20,
-            tries=0,
-            dependencies=[],
-            id=uuid.uuid4(),
-        )
-        scheduler.schedule(task=job0)
-
-    for i in range(5):
-        job_inner0 = Job(
-            fn=worker_tasks['task_for_test_inner_0'], kwargs={},
-            id=uuid.uuid4(),
-        )
-        job_inner1 = Job(
-            fn=worker_tasks['task_for_test_inner_1'], kwargs={},
-            id=uuid.uuid4(),
-        )
-        job_inner2 = Job(
-            fn=worker_tasks['task_for_test_inner_2'], kwargs={},
-            id=uuid.uuid4(),
-        )
-        job_inner3 = Job(
-            fn=worker_tasks['task_for_test_inner_3'], kwargs={},
-            id=uuid.uuid4(),
-        )
-        job = Job(
-            fn=worker_tasks[f'task_for_test_{i % 4}'],
-            args=[],
-            kwargs={},
-            start_datetime=get_start_time(),
-            max_working_time=20,
-            tries=0,
-            dependencies=[job_inner0, job_inner1, job_inner2, job_inner3],
-            id=uuid.uuid4(),
-        )
-        scheduler.schedule(task=job)

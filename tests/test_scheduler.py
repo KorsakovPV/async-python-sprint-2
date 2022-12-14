@@ -26,15 +26,14 @@ class TestScheduler:
             tries=0,
             dependencies=[],
             id_job='123e4567-e89b-12d3-a456-426655440000',
-            status=JobStatus(1)
+            status=JobStatus.IN_PROGRESS
         )
-        # assert new_job.fn_name == 'task_for_test_0'
         assert new_job.start_datetime == datetime.datetime(
             year=2022, month=1, day=1, hour=0, minute=0, second=0
         )
         assert new_job.max_working_time == 20
         assert new_job.id == '123e4567-e89b-12d3-a456-426655440000'
-        assert new_job.status == JobStatus(0)
+        assert new_job.status == JobStatus.IN_QUEUE
 
     def test_get_or_create_job2(self, scheduler, job_inner, job_with_inner):
         scheduler.schedule(job_with_inner)
@@ -48,15 +47,14 @@ class TestScheduler:
             tries=0,
             dependencies=[],
             id_job='123e4567-e89b-12d3-a456-426655440001',
-            status=JobStatus(1)
+            status=JobStatus.IN_PROGRESS
         )
-        # assert new_job.fn_name == 'task_for_test_0'
         assert new_job.start_datetime == datetime.datetime(
             year=2022, month=1, day=1, hour=0, minute=20, second=0
         )
         assert new_job.max_working_time == 20
         assert new_job.id == '123e4567-e89b-12d3-a456-426655440001'
-        assert new_job.status == JobStatus(0)
+        assert new_job.status == JobStatus.IN_QUEUE
 
     def test_get_task_in_scheduler_tasks(self, scheduler, job_inner, job_with_inner):
         scheduler.schedule(job_with_inner)
@@ -75,4 +73,4 @@ class TestScheduler:
         )
         assert new_job.max_working_time == 20
         assert new_job.id == '123e4567-e89b-12d3-a456-426655440001'
-        assert new_job.status == JobStatus(0)
+        assert new_job.status == JobStatus.IN_QUEUE
